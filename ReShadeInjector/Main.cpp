@@ -39,6 +39,26 @@ void main()
 		system("color FC");
 		std::cout << "failed (process not found)!";
 		break;
+	case FAILED_CREATEREMOTETHREAD:
+		system("color FC");
+		std::cout << "failed (CreateRemoteThread error)!";
+		break;
+	case FAILED_NOKERNEL32:
+		system("color FC");
+		std::cout << "failed (Cant load kernel32.dll)!";
+		break;
+	case FAILED_NOLOADLIBRARY:
+		system("color FC");
+		std::cout << "failed (Cant get LadLibrary address)!";
+		break;
+	case FAILED_VIRTUALALLOCEX:
+		system("color FC");
+		std::cout << "failed (Cant allocate memory in remote process)!";
+		break;
+	case FAILED_WRITEPROCESSMEMORY:
+		system("color FC");
+		std::cout << "failed (Cant write remote memory)!";
+		break;
 	}
 	_sleep(2017);
 }
