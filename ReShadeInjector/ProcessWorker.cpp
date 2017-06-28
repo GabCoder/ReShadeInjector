@@ -33,10 +33,10 @@ InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * szName, const wch
 
 	auto LoadLibAddy = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
 
-	auto RemoteString = VirtualAllocEx(Proc, nullptr, sizeof(szLibName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	WriteProcessMemory(Proc, RemoteString, szLibName, sizeof(szLibName), nullptr);
+	LPVOID RemoteString = VirtualAllocEx(Proc, nullptr, wcslen(szLibName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	WriteProcessMemory(Proc, RemoteString, szLibName, wcslen(szLibName), nullptr);
 	CreateRemoteThread(Proc, nullptr, NULL, reinterpret_cast< LPTHREAD_START_ROUTINE >(LoadLibAddy), RemoteString, NULL, nullptr);
-	VirtualFreeEx(Proc, RemoteString, NULL, MEM_RELEASE);
+	//VirtualFreeEx(Proc, RemoteString, NULL, MEM_RELEASE);
 
 	CloseHandle(Proc);
 	return SUCCESS;
