@@ -23,7 +23,6 @@ int ProcessWorker::GetProcessId(const wchar_t* pName)
 
 InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char * libName)
 {
-	char buf[50] = { 0 };
 	int pId = GetProcessId(pName);
 
 	if (!pId)
