@@ -1,8 +1,9 @@
 #pragma once
 
-enum InjectionStatus
+enum InjectionStatus : int
 {
-	SUCCESS = 0,
-	FAILED_OPENPROCESS,
-	FAILED_PROCESSNOTFOUND
+    SUCCESS = 0,
+    FAILED_OPENPROCESS,
+    FAILED_PROCESSNOTFOUND,
+    FAILED_LOADLIBRARYFOUND
 };
