@@ -23,7 +23,7 @@ void main()
 
 	std::cout << "Injection status -> ";
 	
-	InjectionStatus feedback = ProcessWorker::InjectToProcess(L"csgo.exe", L"d3d9.dll");
+	InjectionStatus feedback = ProcessWorker::InjectToProcess(L"csgo.exe", "d3d9.dll");
 
 	switch (feedback)
 	{

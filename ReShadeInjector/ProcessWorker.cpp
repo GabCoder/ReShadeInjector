@@ -37,6 +37,7 @@ InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * szName, const wch
 	WriteProcessMemory(Proc, RemoteString, szLibName, sizeof(szLibName), nullptr);
 	CreateRemoteThread(Proc, nullptr, NULL, reinterpret_cast< LPTHREAD_START_ROUTINE >(LoadLibAddy), RemoteString, NULL, nullptr);
 	VirtualFreeEx(Proc, RemoteString, NULL, MEM_RELEASE);
+
 	CloseHandle(Proc);
 	return SUCCESS;
 }
