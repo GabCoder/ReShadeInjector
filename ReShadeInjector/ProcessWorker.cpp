@@ -6,8 +6,7 @@ int ProcessWorker::GetProcessId(const wchar_t* pName)
 {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-	PROCESSENTRY32 pe;
-	pe.dwSize = sizeof(PROCESSENTRY32);
+	PROCESSENTRY32 pe{ sizeof(PROCESSENTRY32) };
 	Process32First(hSnapshot, &pe);
 
 	if (wcscmp(pe.szExeFile, pName) == 0) 
@@ -21,7 +20,7 @@ int ProcessWorker::GetProcessId(const wchar_t* pName)
 	return 0;
 }
 
-InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char * libName)
+InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const wchar_t * libName)
 {
 	int pId = GetProcessId(pName);
 
@@ -32,12 +31,12 @@ InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char
 	if (!Proc)
 		return FAILED_OPENPROCESS;
 
-	LPVOID LoadLibAddy = (LPVOID)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryA");
+	LPVOID LoadLibAddy = (LPVOID)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
 
-	LPVOID RemoteString = (LPVOID)VirtualAllocEx(Proc, nullptr, strlen(libName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	WriteProcessMemory(Proc, (LPVOID)RemoteString, libName, strlen(libName), nullptr);
+	LPVOID RemoteString = (LPVOID)VirtualAllocEx(Proc, nullptr, sizeof(libName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	WriteProcessMemory(Proc, (LPVOID)RemoteString, libName, sizeof(libName), nullptr);
 	CreateRemoteThread(Proc, nullptr, NULL, (LPTHREAD_START_ROUTINE)LoadLibAddy, (LPVOID)RemoteString, NULL, nullptr);
-
+	VirtualFreeEx( Proc, RemoteString, NULL, MEM_RELEASE );
 	CloseHandle(Proc);
 	return SUCCESS;
 }

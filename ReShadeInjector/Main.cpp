@@ -4,17 +4,17 @@
 void main()
 {
 	system("color F3");
-	std::cout << "Reshade injector by ChangerTeam | reshade.me" << std::endl;
+	std::cout << "Reshade injector by ChangerTeam | reshade.me\n";
 
 	if (ProcessWorker::GetProcessId(L"csgo.exe") != 0)
 	{
 		system("color FC");
-		std::cout << "csgo.exe is already started! => reshade injection failed :(" << std::endl;
+		std::cout << "csgo.exe is already started! => reshade injection failed :(\n";
 		_sleep(2000);
 		return;
 	}
 
-	std::cout << "Looking for csgo.exe process..." << std::endl;
+	std::cout << "Looking for csgo.exe process...\n";
 
 	do
 	{
@@ -23,7 +23,7 @@ void main()
 
 	std::cout << "Injection status -> ";
 	
-	InjectionStatus feedback = ProcessWorker::InjectToProcess(L"csgo.exe", "d3d9.dll");
+	InjectionStatus feedback = ProcessWorker::InjectToProcess(L"csgo.exe", L"d3d9.dll");
 
 	switch (feedback)
 	{
