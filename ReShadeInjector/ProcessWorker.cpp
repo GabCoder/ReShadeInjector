@@ -20,7 +20,7 @@ int ProcessWorker::GetProcessId(const wchar_t* pName)
 	return 0;
 }
 
-InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char * libName)
+InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const wchar_t * libName)
 {
 	int pId = GetProcessId(pName);
 
@@ -31,7 +31,7 @@ InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char
 	if (!Proc)
 		return FAILED_OPENPROCESS;
 
-	LPVOID LoadLibAddy = (LPVOID)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryA");
+	LPVOID LoadLibAddy = (LPVOID)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
 
 	LPVOID RemoteString = (LPVOID)VirtualAllocEx(Proc, nullptr, sizeof(libName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	WriteProcessMemory(Proc, (LPVOID)RemoteString, libName, sizeof(libName), nullptr);
