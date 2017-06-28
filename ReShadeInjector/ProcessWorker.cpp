@@ -2,41 +2,70 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-int ProcessWorker::GetProcessId(const wchar_t* pName)
+/**
+ * \param szProcessName Name of the process. 
+ * 
+ * \return Process ID.
+ */
+auto ProcessWorker::GetProcessId(const wchar_t* szProcessName) -> int
 {
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    auto hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if( !hSnapshot )
+        return 0;
 
-	PROCESSENTRY32 pe{ sizeof(PROCESSENTRY32) };
-	Process32First(hSnapshot, &pe);
+    PROCESSENTRY32 pe{sizeof(PROCESSENTRY32)};
+    Process32First(hSnapshot, &pe);
 
-	if (wcscmp(pe.szExeFile, pName) == 0) 
-		return pe.th32ProcessID;
+    if (wcscmp(pe.szExeFile, szProcessName) == 0)
+        return static_cast<int>(pe.th32ProcessID);
 
-	while (Process32Next(hSnapshot, &pe))
-	{
-		if (wcscmp(pe.szExeFile, pName) == 0)
-			return pe.th32ProcessID;
-	}
-	return 0;
+    while (Process32Next(hSnapshot, &pe))
+    {
+        if (wcscmp(pe.szExeFile, szProcessName) == 0)
+            return static_cast<int>(pe.th32ProcessID);
+    }
+
+    return 0;
 }
 
-InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char * libName)
+/**
+ * \param szProcessName Name of the process.
+ * \param szLibraryName Name of the library to be injected.
+ * 
+ * \return Injection status.
+ */
+auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t* szLibraryName) -> InjectionStatus
 {
-	int pId = GetProcessId(pName);
+    // Get ID of process.
+    auto iPID = GetProcessId(szProcessName);
+    if (!iPID)
+        return FAILED_PROCESSNOTFOUND;
 
-	if (!pId)
-		return FAILED_PROCESSNOTFOUND;
+    // Get process handle using PID.
+    auto hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, iPID);
+    if (!hProcess)
+        return FAILED_OPENPROCESS;
 
-	HANDLE Proc = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pId);
-	if (!Proc)
-		return FAILED_OPENPROCESS;
+    // Get LoadLibraryW function address.
+    auto pLoadLibrary = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
+    if (!pLoadLibrary)
+        return FAILED_LOADLIBRARYFOUND;
 
-	LPVOID LoadLibAddy = static_cast<LPVOID>(GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryA"));
+    // Allocate memory for string.
+    auto RemoteString = VirtualAllocEx(hProcess, nullptr, sizeof szLibraryName, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 
-	LPVOID RemoteString = static_cast<LPVOID>(VirtualAllocEx(Proc, nullptr, sizeof(libName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
-	WriteProcessMemory(Proc, static_cast<LPVOID>(RemoteString), libName, sizeof(libName), nullptr);
-	CreateRemoteThread(Proc, nullptr, NULL, static_cast<LPTHREAD_START_ROUTINE>(LoadLibAddy), static_cast<LPVOID>(RemoteString), NULL, nullptr);
-	CloseHandle(Proc);
-	return SUCCESS;
+    // Write string to memory.
+    WriteProcessMemory(hProcess, RemoteString, szLibraryName, sizeof szLibraryName, nullptr);
+
+    // Creathe thread in process that calls LoadLibraryW with out string.
+    CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
+
+    // Free memory that we used.
+    VirtualFreeEx(hProcess, RemoteString, NULL, MEM_RELEASE);
+
+    // Close process handle.
+    CloseHandle(hProcess);
+
+    // We succeed.
+    return SUCCESS;
 }
-
