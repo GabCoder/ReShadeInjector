@@ -3,6 +3,6 @@
 
 namespace ProcessWorker
 {
-	extern int GetProcessId(const wchar_t* pName);
-	extern InjectionStatus InjectToProcess(const wchar_t* pName, const wchar_t* libName);
+    extern auto GetProcessId(const wchar_t* szProcessName) -> int;
+    extern auto InjectToProcess(const wchar_t* szProcessName, const wchar_t* szLibraryName) -> InjectionStatus;
 }
