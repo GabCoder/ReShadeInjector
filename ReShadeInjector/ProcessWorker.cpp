@@ -53,13 +53,12 @@ auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t*
         return FAILED_LOADLIBRARYFOUND;
 
     // Allocate memory for string.
-    auto RemoteString = VirtualAllocEx(hProcess, nullptr, sizeof szLibraryName, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-
-    // Write string to memory.
-    WriteProcessMemory(hProcess, RemoteString, szLibraryName, sizeof szLibraryName, nullptr);
+	LPVOID RemoteString = VirtualAllocEx(hProcess, nullptr, wcslen(szLibraryName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	WriteProcessMemory(hProcess, RemoteString, szLibraryName, wcslen(szLibraryName), nullptr);
+	//VirtualFreeEx(Proc, RemoteString, NULL, MEM_RELEASE);
 
     // Create thread in process that calls LoadLibraryW with our string.
-    auto hThread = CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
+    HANDLE hThread = CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
 
     // Wait until thread finish.
     WaitForSingleObjectEx(hThread, INFINITE, FALSE);

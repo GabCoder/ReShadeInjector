@@ -1,6 +1,6 @@
 #include <iostream>
 #include "ProcessWorker.h"
-#include <synchapi.h>
+//#include <synchapi.h>
 
 auto main() -> int
 {
@@ -11,7 +11,7 @@ auto main() -> int
     {
         system("color FC");
         std::cout << "csgo.exe is already started! => reshade injection failed :(\n";
-        Sleep(2000);
+        _sleep(2000);
         return EXIT_FAILURE;
     }
 
@@ -19,7 +19,7 @@ auto main() -> int
 
     do
     {
-        Sleep(13);
+        _sleep(13);
     }
     while (!ProcessWorker::GetProcessId(L"csgo.exe"));
 
@@ -45,6 +45,6 @@ auto main() -> int
         std::cout << "failed! (LoadLibrary not found)";
         break;
     }
-    Sleep(2017);
+    _sleep(2017);
     return EXIT_SUCCESS;
 }
