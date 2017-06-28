@@ -58,7 +58,13 @@ auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t*
     WriteProcessMemory(hProcess, RemoteString, szLibraryName, sizeof szLibraryName, nullptr);
 
     // Creathe thread in process that calls LoadLibraryW with out string.
-    CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
+    auto hThread = CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
+
+    // Wait until thread finish.
+    WaitForSingleObjectEx(hThread, INFINITE, FALSE);
+    
+    // Close thread handle.
+    CloseHandle(hThread);
 
     // Free memory that we used.
     VirtualFreeEx(hProcess, RemoteString, NULL, MEM_RELEASE);
