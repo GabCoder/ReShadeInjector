@@ -57,7 +57,7 @@ auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t*
     // Write string to memory.
     WriteProcessMemory(hProcess, RemoteString, szLibraryName, sizeof szLibraryName, nullptr);
 
-    // Creathe thread in process that calls LoadLibraryW with out string.
+    // Create thread in process that calls LoadLibraryW with out string.
     auto hThread = CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
 
     // Wait until thread finish.
