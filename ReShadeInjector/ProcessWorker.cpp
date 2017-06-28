@@ -6,8 +6,7 @@ int ProcessWorker::GetProcessId(const wchar_t* pName)
 {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-	PROCESSENTRY32 pe;
-	pe.dwSize = sizeof(PROCESSENTRY32);
+	PROCESSENTRY32 pe{ sizeof(PROCESSENTRY32) };
 	Process32First(hSnapshot, &pe);
 
 	if (wcscmp(pe.szExeFile, pName) == 0) 
