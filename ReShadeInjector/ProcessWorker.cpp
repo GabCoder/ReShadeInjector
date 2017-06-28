@@ -20,7 +20,7 @@ int ProcessWorker::GetProcessId(const wchar_t* pName)
 	return 0;
 }
 
-InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const wchar_t * libName)
+InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const char * libName)
 {
 	int pId = GetProcessId(pName);
 
@@ -31,12 +31,11 @@ InjectionStatus ProcessWorker::InjectToProcess(const wchar_t * pName, const wcha
 	if (!Proc)
 		return FAILED_OPENPROCESS;
 
-	LPVOID LoadLibAddy = (LPVOID)GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
+	LPVOID LoadLibAddy = static_cast<LPVOID>(GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryA"));
 
-	LPVOID RemoteString = (LPVOID)VirtualAllocEx(Proc, nullptr, sizeof(libName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	WriteProcessMemory(Proc, (LPVOID)RemoteString, libName, sizeof(libName), nullptr);
-	CreateRemoteThread(Proc, nullptr, NULL, (LPTHREAD_START_ROUTINE)LoadLibAddy, (LPVOID)RemoteString, NULL, nullptr);
-	VirtualFreeEx( Proc, RemoteString, NULL, MEM_RELEASE );
+	LPVOID RemoteString = static_cast<LPVOID>(VirtualAllocEx(Proc, nullptr, sizeof(libName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE));
+	WriteProcessMemory(Proc, static_cast<LPVOID>(RemoteString), libName, sizeof(libName), nullptr);
+	CreateRemoteThread(Proc, nullptr, NULL, static_cast<LPTHREAD_START_ROUTINE>(LoadLibAddy), static_cast<LPVOID>(RemoteString), NULL, nullptr);
 	CloseHandle(Proc);
 	return SUCCESS;
 }
