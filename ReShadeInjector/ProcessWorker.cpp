@@ -1,7 +1,4 @@
 #include "ProcessWorker.h"
-#include <Windows.h>
-#include <TlHelp32.h>
-
 
 /**
  * \param szProcessName Name of the process. 
@@ -35,7 +32,7 @@ auto ProcessWorker::GetProcessId(const wchar_t* szProcessName) -> int
  * 
  * \return Injection status.
  */
-auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t* szLibraryName) -> InjectionStatus
+auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, wchar_t* szLibraryName) -> InjectionStatus
 {
     // Get ID of process.
     auto iPID = GetProcessId(szProcessName);
@@ -44,21 +41,32 @@ auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t*
 
     // Get process handle using PID.
     auto hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, iPID);
-    if (!hProcess)
-        return FAILED_OPENPROCESS;
+	if (!hProcess)
+		return FAILED_OPENPROCESS;
+
+	HMODULE kernel32 = GetModuleHandle(L"kernel32.dll");
+	if (!kernel32)
+		return FAILED_NOKERNEL32;
 
     // Get LoadLibraryW function address.
-    auto pLoadLibrary = GetProcAddress(GetModuleHandle(L"kernel32.dll"), "LoadLibraryW");
+    auto pLoadLibrary = GetProcAddress(kernel32, "LoadLibraryW");
     if (!pLoadLibrary)
-        return FAILED_LOADLIBRARYFOUND;
+        return FAILED_NOLOADLIBRARY;
+	
+	size_t size = wcslen(szLibraryName) * 2;
 
     // Allocate memory for string.
-	LPVOID RemoteString = VirtualAllocEx(hProcess, nullptr, wcslen(szLibraryName), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	WriteProcessMemory(hProcess, RemoteString, szLibraryName, wcslen(szLibraryName), nullptr);
-	//VirtualFreeEx(Proc, RemoteString, NULL, MEM_RELEASE);
+	LPVOID RemoteString = VirtualAllocEx(hProcess, nullptr, size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (!RemoteString)
+		return FAILED_VIRTUALALLOCEX;
+
+	if (WriteProcessMemory(hProcess, RemoteString, szLibraryName, size, nullptr) == FALSE)
+		return FAILED_WRITEPROCESSMEMORY;
 
     // Create thread in process that calls LoadLibraryW with our string.
     HANDLE hThread = CreateRemoteThread(hProcess, nullptr, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(pLoadLibrary), RemoteString, NULL, nullptr);
+	if (!hThread)
+		return FAILED_CREATEREMOTETHREAD;
 
     // Wait until thread finish.
     WaitForSingleObjectEx(hThread, INFINITE, FALSE);
@@ -67,7 +75,11 @@ auto ProcessWorker::InjectToProcess(const wchar_t* szProcessName, const wchar_t*
     CloseHandle(hThread);
 
     // Free memory that we used.
-    VirtualFreeEx(hProcess, RemoteString, NULL, MEM_RELEASE);
+	if (VirtualFreeEx(hProcess, RemoteString, NULL, MEM_RELEASE) == FALSE)
+	{
+		CloseHandle(hProcess);
+		return FAILED_VIRTUALFREE;
+	}
 
     // Close process handle.
     CloseHandle(hProcess);
