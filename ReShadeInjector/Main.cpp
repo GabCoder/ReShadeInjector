@@ -33,7 +33,7 @@ int main()
 			break;
 		working_dir[i] = L'\0';
 	}
-	wcscpy(&working_dir[i+1], L"d3d9_1.dll");
+	wcscpy(&working_dir[i+1], L"d3d9.dll");
 
 	auto eExitStatus = ProcessWorker::InjectToProcess(L"csgo.exe", working_dir);
 	switch (eExitStatus)
