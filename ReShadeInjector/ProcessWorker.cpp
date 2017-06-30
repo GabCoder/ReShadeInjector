@@ -1,12 +1,10 @@
-#include "ProcessWorker.h"
 #define NOMINMAX
-#include <cwchar> // std::wcsrchr
+#include "ProcessWorker.h"
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <iostream> // std::cin, std::cout
 #include <limits> // std::numeric_limits<>
-#include <ios>
-
+#include <cwchar> // std::wcsrchr
 
 /**
  * \param szProcessName Name of the process. 
