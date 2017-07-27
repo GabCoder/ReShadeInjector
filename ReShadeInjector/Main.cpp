@@ -1,64 +1,81 @@
-#include <iostream>
+#include <iostream> // std::cin, std::cout
+#include <cstdlib> // std::system, std::wcscat
+#include <chrono> // std::chrono::milliseconds
+#include <thread> // std::this_thread
 #include "ProcessWorker.h"
 
-void main()
+int main()
 {
-	system("color F3");
+	std::system("color F3");
 	std::cout << "Reshade injector by ChangerTeam | reshade.me\n";
 
 	if (ProcessWorker::GetProcessId(L"csgo.exe") != 0)
 	{
 		system("color FC");
-		std::cout << "csgo.exe is already started! => reshade injection failed :(\n";
-		_sleep(2000);
-		return;
+        Utils::WaitForInput("csgo.exe is already started! => reshade injection failed :(\n");
+		return EXIT_FAILURE; // у меня таке было, библиотека какая-то коряво подклбчена!
 	}
 
 	std::cout << "Looking for csgo.exe process...\n";
 
 	do
 	{
-		_sleep(13);
-	} while (!ProcessWorker::GetProcessId(L"csgo.exe"));
+        std::this_thread::sleep_for(std::chrono::milliseconds(13));
+	}
+	while (!ProcessWorker::GetProcessId(L"csgo.exe"));
 
 	std::cout << "Injection status -> ";
-	
-	InjectionStatus feedback = ProcessWorker::InjectToProcess(L"csgo.exe", "d3d9.dll");
 
-	switch (feedback)
-	{
-	case SUCCESS:
-		system("color F2");
-		std::cout << "success!";
-		break;
-	case FAILED_OPENPROCESS:
-		system("color FC");
-		std::cout << "failed (OpenProcess error)!";
-		break;
-	case FAILED_PROCESSNOTFOUND:
-		system("color FC");
-		std::cout << "failed (process not found)!";
-		break;
-	case FAILED_CREATEREMOTETHREAD:
-		system("color FC");
-		std::cout << "failed (CreateRemoteThread error)!";
-		break;
-	case FAILED_NOKERNEL32:
-		system("color FC");
-		std::cout << "failed (Cant load kernel32.dll)!";
-		break;
-	case FAILED_NOLOADLIBRARY:
-		system("color FC");
-		std::cout << "failed (Cant get LadLibrary address)!";
-		break;
-	case FAILED_VIRTUALALLOCEX:
-		system("color FC");
-		std::cout << "failed (Cant allocate memory in remote process)!";
-		break;
-	case FAILED_WRITEPROCESSMEMORY:
-		system("color FC");
-		std::cout << "failed (Cant write remote memory)!";
-		break;
-	}
-	_sleep(2017);
+	wchar_t working_dir[256];
+    auto working_dir_len = Utils::GetCurrentWorkingDirectory(working_dir, 256);
+    if(working_dir_len == 0) 
+    {
+        Utils::WaitForInput("Failed to get current working directory!");
+        return EXIT_FAILURE;
+    }
+    std::wcscat(working_dir, L"d3d9.dll");
+    
+	auto eExitStatus = ProcessWorker::InjectToProcess(L"csgo.exe", working_dir);
+    if(eExitStatus == SUCCESS) 
+    {
+        std::system("color F2");
+        Utils::WaitForInput("success!");
+        return EXIT_SUCCESS;
+    }
+
+    std::system("color FC");
+    switch(eExitStatus) 
+    {
+        case FAILED_PROCESSNOTFOUND:
+            Utils::WaitForInput("failed! (process not found)");
+            break;
+        case FAILED_NOKERNEL32: 
+            Utils::WaitForInput("failed! (kernel32.dll not found)");
+            break;
+        case FAILED_NOLOADLIBRARY:
+            Utils::WaitForInput("failed! (LoadLibrary not found)");
+            break;
+        case FAILED_OPENPROCESS:
+            Utils::WaitForInput("failed! (OpenProcess error)");
+            break;
+        case FAILED_VIRTUALALLOCEX:
+            Utils::WaitForInput("failed! (unable to allocate space at csgo.exe)");
+            break;
+        case FAILED_WRITEPROCESSMEMORY:
+            Utils::WaitForInput("failed! (unable to write a process memory)");
+            break;
+        case FAILED_CREATEREMOTETHREAD:
+            Utils::WaitForInput("failed! (uanable to create remote thread)");
+            break;
+        case FAILED_WAITFORSINGLEOBJECTEX:
+            Utils::WaitForInput("failed! (uable to wait for remote thread)");
+            break;
+        case FAILED_VIRTUALFREE:
+            Utils::WaitForInput("failed! (uable to free allocated space at csgo.exe)");
+            break;
+        default:
+            std::abort();
+    }
+
+	return EXIT_FAILURE;
 }
